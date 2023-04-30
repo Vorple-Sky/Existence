@@ -1,26 +1,25 @@
 <!DOCTYPE html>
 <html>
   <head>
-    <meta charset="UTF-8">
-    <title>Random Noun Sentence Generator</title>
+    <title>Random Sentence Generator</title>
     <link rel="stylesheet" href="style.css">
   </head>
   <body>
-    <h1>Random Noun Sentence Generator</h1>
-    <form id="noun-form">
-      <label for="noun-1">Noun 1:</label>
-      <input type="text" id="noun-1"><br>
-      <label for="noun-2">Noun 2:</label>
-      <input type="text" id="noun-2"><br>
-      <label for="noun-3">Noun 3:</label>
-      <input type="text" id="noun-3"><br>
-      <label for="noun-4">Noun 4:</label>
-      <input type="text" id="noun-4"><br>
-      <label for="noun-5">Noun 5:</label>
-      <input type="text" id="noun-5"><br>
-      <button type="submit" id="generate-btn">Generate Sentence</button>
+    <h1>Random Sentence Generator</h1>
+    <form>
+      <label for="noun1">Noun 1:</label>
+      <input type="text" id="noun1"><br>
+      <label for="noun2">Noun 2:</label>
+      <input type="text" id="noun2"><br>
+      <label for="noun3">Noun 3:</label>
+      <input type="text" id="noun3"><br>
+      <label for="noun4">Noun 4:</label>
+      <input type="text" id="noun4"><br>
+      <label for="noun5">Noun 5:</label>
+      <input type="text" id="noun5"><br>
+      <button type="button" onclick="generateSentence()">Generate Sentence</button>
     </form>
-    <div id="output"></div>
+    <div id="sentence"></div>
     <script src="main.js"></script>
   </body>
 </html>

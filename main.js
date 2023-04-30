@@ -1,13 +1,50 @@
-const nounForm = document.querySelector('#noun-form');
-const output = document.querySelector('#output');
+function generateSentence() {
+    const nouns = [
+      document.getElementById("noun1").value,
+      document.getElementById("noun2").value,
+      document.getElementById("noun3").value,
+      document.getElementById("noun4").value,
+      document.getElementById("noun5").value,
+    ];
+  
+    const adjectives = [
+      "red",
+      "blue",
+      "green",
+      "happy",
+      "sad",
+      "angry",
+      "silly",
+      "serious",
+      "playful",
+      "curious",
+      "hot",
+      "annoyed"
+    ];
+  
+    const verbs = [
+      "ran",
+      "jumped",
+      "ate",
+      "slept",
+      "cooked",
+      "laughed",
+      "cried",
+      "danced",
+      "sang",
+      "talked",
+      "listened"
+    ];
+  
+    const randomNoun1 = nouns[Math.floor(Math.random() * nouns.length)];
+    const randomAdjective1 = adjectives[Math.floor(Math.random() * adjectives.length)];
+    const randomVerb1 = verbs[Math.floor(Math.random() * verbs.length)];
+    const randomNoun2 = nouns[Math.floor(Math.random() * nouns.length)];
+    const randomAdjective2 = adjectives[Math.floor(Math.random() * adjectives.length)];
+    const randomVerb2 = verbs[Math.floor(Math.random() * verbs.length)];
 
-nounForm.addEventListener('submit', (event) => {
-  event.preventDefault();
-  const noun1 = document.querySelector('#noun-1').value;
-  const noun2 = document.querySelector('#noun-2').value;
-  const noun3 = document.querySelector('#noun-3').value;
-  const noun4 = document.querySelector('#noun-4').value;
-  const noun5 = document.querySelector('#noun-5').value;
-  const sentence = `The ${noun1}, ${noun2}, ${noun3}, ${noun4}, and ${noun5}.`;
-  output.textContent = sentence;
-});
+    const sentence = `The ${randomAdjective1} ${randomNoun1} ${randomVerb1} and ${randomAdjective2} ${randomNoun2} ${randomVerb2}.`;
+  
+    document.getElementById("sentence").textContent = sentence;
+  }
+  
