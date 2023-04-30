@@ -1,21 +1,26 @@
 <!DOCTYPE html>
-<!--[if lt IE 7]>      <html class="no-js lt-ie9 lt-ie8 lt-ie7"> <![endif]-->
-<!--[if IE 7]>         <html class="no-js lt-ie9 lt-ie8"> <![endif]-->
-<!--[if IE 8]>         <html class="no-js lt-ie9"> <![endif]-->
-<!--[if gt IE 8]>      <html class="no-js"> <!--<![endif]-->
 <html>
-    <head>
-        <meta charset="utf-8">
-        <meta http-equiv="X-UA-Compatible" content="IE=edge">
-        <title></title>
-        <meta name="description" content="">
-        <meta name="viewport" content="width=device-width, initial-scale=1">
-        <link rel="stylesheet" href="styles.css">
-    </head>
-    <body>
-        <body style="background-color: black">
-        </body>
-        
-        <script src="" async defer></script>
-    </body>
+  <head>
+    <meta charset="UTF-8">
+    <title>Random Noun Sentence Generator</title>
+    <link rel="stylesheet" href="style.css">
+  </head>
+  <body>
+    <h1>Random Noun Sentence Generator</h1>
+    <form id="noun-form">
+      <label for="noun-1">Noun 1:</label>
+      <input type="text" id="noun-1"><br>
+      <label for="noun-2">Noun 2:</label>
+      <input type="text" id="noun-2"><br>
+      <label for="noun-3">Noun 3:</label>
+      <input type="text" id="noun-3"><br>
+      <label for="noun-4">Noun 4:</label>
+      <input type="text" id="noun-4"><br>
+      <label for="noun-5">Noun 5:</label>
+      <input type="text" id="noun-5"><br>
+      <button type="submit" id="generate-btn">Generate Sentence</button>
+    </form>
+    <div id="output"></div>
+    <script src="main.js"></script>
+  </body>
 </html>
