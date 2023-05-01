@@ -23,6 +23,7 @@ body {
     display: inline-block;
     width: 100px;
     text-align: right;
+    font-size: x-large;
   }
   
   input {
@@ -31,6 +32,7 @@ body {
   
   button {
     margin-top: 10px;
+    font-size: large;
   }
   
   #sentence {
