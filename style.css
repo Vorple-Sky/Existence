@@ -1,0 +1,36 @@
+body {
+    font-family: sans-serif;
+    margin: 0;
+    padding: 0;
+  }
+  
+  h1 {
+    text-align: center;
+    margin-top: 50px;
+  }
+  
+  form {
+    text-align: center;
+    margin-top: 50px;
+  }
+  
+  label {
+    display: inline-block;
+    width: 100px;
+    text-align: right;
+  }
+  
+  input {
+    margin-bottom: 10px;
+  }
+  
+  button {
+    margin-top: 10px;
+  }
+  
+  #sentence {
+    text-align: center;
+    margin-top: 50px;
+    font-size: 24px;
+  }
+  
