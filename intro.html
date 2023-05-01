@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Welcome to the Early 2000s</title>
+  <style>
+    body {
+      background-color: #ffcc00; /* set initial background color */
+      transition: background-color 1s; /* add a transition effect */
+      text-align: center; /* center text */
+    }
+
+    h1 {
+      font-size: 3em; /* set font size */
+      margin-top: 50px; /* add top margin */
+    }
+
+    button {
+      font-size: 1.5em; /* set font size */
+      padding: 10px 20px; /* add padding */
+      border: none; /* remove border */
+      background-color: #4CAF50; /* set button color */
+      color: white; /* set text color */
+      cursor: pointer; /* change cursor to pointer */
+    }
+
+    button:hover {
+      background-color: #3e8e41; /* change button color on hover */
+    }
+  </style>
+</head>
+<body>
+  <h1>Welcome to the Early 2000s</h1>
+  <button id="index">Next Page</button>
+
+  <script>
+    // set up interval to change background color every 2 seconds
+    setInterval(() => {
+      const colors = ["#ffcc00", "#00a1e4", "#f0594e", "#9d4edd"];
+      const randomColor = colors[Math.floor(Math.random() * colors.length)];
+      document.body.style.backgroundColor = randomColor;
+    }, 2000);
+
+    // add event listener to button to navigate to next page
+    document.getElementById("index").addEventListener("click", () => {
+      window.location.href = "index.html";
+    });
+  </script>
+</body>
+</html>
+
+
