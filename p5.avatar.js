@@ -1,4 +1,3 @@
-
 // Animated character
 class Avatar  {
   // gets called with new keyword

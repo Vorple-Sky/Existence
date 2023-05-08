@@ -1,4 +1,5 @@
 
+
 (function(root, factory) {
 if (typeof define === 'function' && define.amd)
 define('p5.play', ['p5'], function(p5) { (factory(p5)); });
@@ -7,13 +8,52 @@ factory(require('../p5'));
 else
 factory(root.p5);
 }(this, function(p5) {
+/**
+ * p5.play is a library for p5.js to facilitate the creation of games and gamelike
+ * projects.
+ *
+ * It provides a flexible Sprite class to manage visual objects in 2D space
+ * and features such as animation support, basic collision detection
+ * and resolution, mouse and keyboard interactions, and a virtual camera.
+ *
+ * p5.play is not a box2D-derived physics engine, it doesn't use events, and it's
+ * designed to be understood and possibly modified by intermediate programmers.
+ *
+ * See the examples folder for more info on how to use this library.
+ *
+ * @module p5.play
+ * @submodule p5.play
+ * @for p5.play
+ * @main
+ */
 
 p5.prototype.registerMethod('init', function p5PlayInit() {
-  
+  /**
+   * The sketch camera automatically created at the beginning of a sketch.
+   * A camera facilitates scrolling and zooming for scenes extending beyond
+   * the canvas. A camera has a position, a zoom factor, and the mouse
+   * coordinates relative to the view.
+   *
+   * In p5.js terms the camera wraps the whole drawing cycle in a
+   * transformation matrix but it can be disabled anytime during the draw
+   * cycle, for example to draw interface elements in an absolute position.
+   *
+   * @property camera
+   * @type {camera}
+   */
   this.camera = new Camera(this, 0, 0, 1);
   this.camera.init = false;
 });
 
+// This provides a way for us to lazily define properties that
+// are global to p5 instances.
+//
+// Note that this isn't just an optimization: p5 currently provides no
+// way for add-ons to be notified when new p5 instances are created, so
+// lazily creating these properties is the *only* mechanism available
+// to us. For more information, see:
+//
+// https://github.com/processing/p5.js/issues/1263
 function defineLazyP5Property(name, getter) {
   Object.defineProperty(p5.prototype, name, {
     configurable: true,
@@ -32,7 +72,9 @@ function defineLazyP5Property(name, getter) {
   });
 }
 
-
+// This returns a factory function, suitable for passing to
+// defineLazyP5Property, that returns a subclass of the given
+// constructor that is always bound to a particular p5 instance.
 function boundConstructorFactory(constructor) {
   if (typeof(constructor) !== 'function')
     throw new Error('constructor must be a function');
@@ -51,7 +93,19 @@ function boundConstructorFactory(constructor) {
   };
 }
 
-
+// This is a utility that makes it easy to define convenient aliases to
+// pre-bound p5 instance methods.
+//
+// For example:
+//
+//   var pInstBind = createPInstBinder(pInst);
+//
+//   var createVector = pInstBind('createVector');
+//   var loadImage = pInstBind('loadImage');
+//
+// The above will create functions createVector and loadImage, which can be
+// used similar to p5 global mode--however, they're bound to specific p5
+// instances, and can thus be used outside of global mode.
 function createPInstBinder(pInst) {
   return function pInstBind(methodName) {
     var method = pInst[methodName];
@@ -62,7 +116,9 @@ function createPInstBinder(pInst) {
   };
 }
 
-
+// These are utility p5 functions that don't depend on p5 instance state in
+// order to work properly, so we'll go ahead and make them easy to
+// access without needing to bind them to a p5 instance.
 var abs = p5.prototype.abs;
 var radians = p5.prototype.radians;
 var dist = p5.prototype.dist;
@@ -71,12 +127,43 @@ var pow = p5.prototype.pow;
 var round = p5.prototype.round;
 
 
+// =============================================================================
+//                         p5 additions
+// =============================================================================
+
+/**
+* A Group containing all the sprites in the sketch.
+*
+* @property allSprites
+* @type {Group}
+*/
+
 defineLazyP5Property('allSprites', function() {
   return new p5.prototype.Group();
 });
 
 p5.prototype.spriteUpdate = true;
 
+/**
+   * A Sprite is the main building block of p5.play:
+   * an element able to store images or animations with a set of
+   * properties such as position and visibility.
+   * A Sprite can have a collider that defines the active area to detect
+   * collisions or overlappings with other sprites and mouse interactions.
+   *
+   * Sprites created using createSprite (the preferred way) are added to the
+   * allSprites group and given a depth value that puts it in front of all
+   * other sprites.
+   *
+   * @method createSprite
+   * @param {Number} x Initial x coordinate
+   * @param {Number} y Initial y coordinate
+   * @param {Number} width Width of the placeholder rectangle and of the
+   *                       collider until an image or new collider are set
+   * @param {Number} height Height of the placeholder rectangle and of the
+   *                       collider until an image or new collider are set
+   * @return {Object} The new sprite instance
+   */
 
 p5.prototype.createSprite = function(x, y, width, height) {
   var s = new Sprite(this, x, y, width, height);
@@ -86,12 +173,27 @@ p5.prototype.createSprite = function(x, y, width, height) {
 };
 
 
-
+/**
+   * Removes a Sprite from the sketch.
+   * The removed Sprite won't be drawn or updated anymore.
+   * Equivalent to Sprite.remove()
+   *
+   * @method removeSprite
+   * @param {Object} sprite Sprite to be removed
+*/
 p5.prototype.removeSprite = function(sprite) {
   sprite.remove();
 };
 
-
+/**
+* Updates all the sprites in the sketch (position, animation...)
+* it's called automatically at every draw().
+* It can be paused by passing a parameter true or false;
+* Note: it does not render the sprites.
+*
+* @method updateSprites
+* @param {Boolean} updating false to pause the update, true to resume
+*/
 p5.prototype.updateSprites = function(upd) {
 
   if(upd === false)
@@ -106,7 +208,12 @@ p5.prototype.updateSprites = function(upd) {
   }
 };
 
-
+/**
+* Returns all the sprites in the sketch as an array
+*
+* @method getSprites
+* @return {Array} Array of Sprites
+*/
 p5.prototype.getSprites = function() {
 
   //draw everything
@@ -132,7 +239,15 @@ p5.prototype.getSprites = function() {
 
 };
 
-
+/**
+* Displays a Group of sprites.
+* If no parameter is specified, draws all sprites in the
+* sketch.
+* The drawing order is determined by the Sprite property "depth"
+*
+* @method drawSprites
+* @param {Group} [group] Group of Sprites to be displayed
+*/
 p5.prototype.drawSprites = function(group) {
   // If no group is provided, draw the allSprites group.
   group = group || this.allSprites;
@@ -145,23 +260,48 @@ p5.prototype.drawSprites = function(group) {
   group.draw();
 };
 
-
+/**
+* Displays a Sprite.
+* To be typically used in the main draw function.
+*
+* @method drawSprite
+* @param {Sprite} sprite Sprite to be displayed
+*/
 p5.prototype.drawSprite = function(sprite) {
   if(sprite)
   sprite.display();
 };
 
-
+/**
+* Loads an animation.
+* To be typically used in the preload() function of the sketch.
+*
+* @method loadAnimation
+* @param {Sprite} sprite Sprite to be displayed
+*/
 p5.prototype.loadAnimation = function() {
   return construct(this.Animation, arguments);
 };
 
-
+/**
+ * Loads a Sprite Sheet.
+ * To be typically used in the preload() function of the sketch.
+ *
+ * @method loadSpriteSheet
+ */
 p5.prototype.loadSpriteSheet = function() {
   return construct(this.SpriteSheet, arguments);
 };
 
-
+/**
+* Displays an animation.
+*
+* @method animation
+* @param {Animation} anim Animation to be displayed
+* @param {Number} x X coordinate
+* @param {Number} y Y coordinate
+*
+*/
 p5.prototype.animation = function(anim, x, y) {
   anim.draw(x, y);
 };
@@ -179,23 +319,56 @@ var KEY_WENT_DOWN = 1;
 var KEY_IS_DOWN = 2;
 var KEY_WENT_UP = 3;
 
-
+/**
+* Detects if a key was pressed during the last cycle.
+* It can be used to trigger events once, when a key is pressed or released.
+* Example: Super Mario jumping.
+*
+* @method keyWentDown
+* @param {Number|String} key Key code or character
+* @return {Boolean} True if the key was pressed
+*/
 p5.prototype.keyWentDown = function(key) {
   return this._isKeyInState(key, KEY_WENT_DOWN);
 };
 
 
-
+/**
+* Detects if a key was released during the last cycle.
+* It can be used to trigger events once, when a key is pressed or released.
+* Example: Spaceship shooting.
+*
+* @method keyWentUp
+* @param {Number|String} key Key code or character
+* @return {Boolean} True if the key was released
+*/
 p5.prototype.keyWentUp = function(key) {
   return this._isKeyInState(key, KEY_WENT_UP);
 };
 
-
+/**
+* Detects if a key is currently pressed
+* Like p5 keyIsDown but accepts strings and codes
+*
+* @method keyDown
+* @param {Number|String} key Key code or character
+* @return {Boolean} True if the key is down
+*/
 p5.prototype.keyDown = function(key) {
   return this._isKeyInState(key, KEY_IS_DOWN);
 };
 
-
+/**
+ * Detects if a key is in the given state during the last cycle.
+ * Helper method encapsulating common key state logic; it may be preferable
+ * to call keyDown or other methods directly.
+ *
+ * @private
+ * @method _isKeyInState
+ * @param {Number|String} key Key code or character
+ * @param {Number} state Key state to check against
+ * @return {Boolean} True if the key is in the given state
+ */
 p5.prototype._isKeyInState = function(key, state) {
   var keyCode;
   var keyStates = this._p5play.keyStates;
@@ -221,26 +394,66 @@ p5.prototype._isKeyInState = function(key, state) {
   return (keyStates[keyCode] === state);
 };
 
-
+/**
+* Detects if a mouse button is currently down
+* Combines mouseIsPressed and mouseButton of p5
+*
+* @method mouseDown
+* @param {Number} [buttonCode] Mouse button constant LEFT, RIGHT or CENTER
+* @return {Boolean} True if the button is down
+*/
 p5.prototype.mouseDown = function(buttonCode) {
   return this._isMouseButtonInState(buttonCode, KEY_IS_DOWN);
 };
 
+/**
+* Detects if a mouse button is currently up
+* Combines mouseIsPressed and mouseButton of p5
+*
+* @method mouseUp
+* @param {Number} [buttonCode] Mouse button constant LEFT, RIGHT or CENTER
+* @return {Boolean} True if the button is up
+*/
 p5.prototype.mouseUp = function(buttonCode) {
   return this._isMouseButtonInState(buttonCode, KEY_IS_UP);
 };
 
-
+/**
+ * Detects if a mouse button was released during the last cycle.
+ * It can be used to trigger events once, to be checked in the draw cycle
+ *
+ * @method mouseWentUp
+ * @param {Number} [buttonCode] Mouse button constant LEFT, RIGHT or CENTER
+ * @return {Boolean} True if the button was just released
+ */
 p5.prototype.mouseWentUp = function(buttonCode) {
   return this._isMouseButtonInState(buttonCode, KEY_WENT_UP);
 };
 
 
-
+/**
+ * Detects if a mouse button was pressed during the last cycle.
+ * It can be used to trigger events once, to be checked in the draw cycle
+ *
+ * @method mouseWentDown
+ * @param {Number} [buttonCode] Mouse button constant LEFT, RIGHT or CENTER
+ * @return {Boolean} True if the button was just pressed
+ */
 p5.prototype.mouseWentDown = function(buttonCode) {
   return this._isMouseButtonInState(buttonCode, KEY_WENT_DOWN);
 };
 
+/**
+ * Detects if a mouse button is in the given state during the last cycle.
+ * Helper method encapsulating common mouse button state logic; it may be
+ * preferable to call mouseWentUp, etc, directly.
+ *
+ * @private
+ * @method _isMouseButtonInState
+ * @param {Number} [buttonCode] Mouse button constant LEFT, RIGHT or CENTER
+ * @param {Number} state
+ * @return {boolean} True if the button was in the given state
+ */
 p5.prototype._isMouseButtonInState = function(buttonCode, state) {
   var mouseStates = this._p5play.mouseStates;
 
@@ -260,7 +473,14 @@ p5.prototype._isMouseButtonInState = function(buttonCode, state) {
 };
 
 
-
+/**
+ * An object storing all useful keys for easy access
+ * Key.tab = 9
+ *
+ * @private
+ * @property KEY
+ * @type {Object}
+ */
 p5.prototype.KEY = {
     'BACKSPACE': 8,
     'TAB': 9,
@@ -356,13 +576,32 @@ p5.prototype.KEY = {
     'BACKSLASH': 220
 };
 
-
+/**
+ * An object storing deprecated key aliases, which we still support but
+ * should be mapped to valid aliases and generate warnings.
+ *
+ * @private
+ * @property KEY_DEPRECATIONS
+ * @type {Object}
+ */
 p5.prototype.KEY_DEPRECATIONS = {
   'MINUT': 'MINUS',
   'COMA': 'COMMA'
 };
 
-
+/**
+ * Given a string key alias (as defined in the KEY property above), look up
+ * and return the numeric JavaScript key code for that key.  If a deprecated
+ * alias is passed (as defined in the KEY_DEPRECATIONS property) it will be
+ * mapped to a valid key code, but will also generate a warning about use
+ * of the deprecated alias.
+ *
+ * @private
+ * @method _keyCodeFromAlias
+ * @param {!string} alias - a case-insensitive key alias
+ * @return {number|undefined} a numeric JavaScript key code, or undefined
+ *          if no key code matching the given alias is found.
+ */
 p5.prototype._keyCodeFromAlias = function(alias) {
   alias = alias.toUpperCase();
   if (this.KEY_DEPRECATIONS[alias]) {
@@ -417,7 +656,17 @@ p5.prototype.readPresses = function() {
 
 };
 
-
+/**
+* Turns the quadTree on or off.
+* A quadtree is a data structure used to optimize collision detection.
+* It can improve performance when there is a large number of Sprites to be
+* checked continuously for overlapping.
+*
+* p5.play will create and update a quadtree automatically.
+*
+* @method useQuadTree
+* @param {Boolean} use Pass true to enable, false to disable
+*/
 p5.prototype.useQuadTree = function(use) {
 
   if(this.quadTree !== undefined)
@@ -443,6 +692,44 @@ defineLazyP5Property('quadTree', function() {
   }, 4);
 });
 
+/*
+//framerate independent delta, doesn't really work
+p5.prototype.deltaTime = 1;
+
+var now = Date.now();
+var then = Date.now();
+var INTERVAL_60 = 0.0166666; //60 fps
+
+function updateDelta() {
+then = now;
+now = Date.now();
+deltaTime = ((now - then) / 1000)/INTERVAL_60; // seconds since last frame
+}
+*/
+
+/**
+   * A Sprite is the main building block of p5.play:
+   * an element able to store images or animations with a set of
+   * properties such as position and visibility.
+   * A Sprite can have a collider that defines the active area to detect
+   * collisions or overlappings with other sprites and mouse interactions.
+   *
+   * To create a Sprite, use
+   * {{#crossLink "p5.play/createSprite:method"}}{{/crossLink}}.
+   *
+   * @class Sprite
+   */
+
+// For details on why these docs aren't in a YUIDoc comment block, see:
+//
+// https://github.com/molleindustria/p5.play/pull/67
+//
+// @param {Number} x Initial x coordinate
+// @param {Number} y Initial y coordinate
+// @param {Number} width Width of the placeholder rectangle and of the
+//                       collider until an image or new collider are set
+// @param {Number} height Height of the placeholder rectangle and of the
+//                        collider until an image or new collider are set
 function Sprite(pInst, _x, _y, _w, _h) {
   var pInstBind = createPInstBinder(pInst);
 
@@ -477,54 +764,151 @@ function Sprite(pInst, _x, _y, _w, _h) {
   var camera = pInst.camera;
 
 
-  
+  // These are p5 constants that we'd like easy access to.
   var RGB = p5.prototype.RGB;
   var CENTER = p5.prototype.CENTER;
   var LEFT = p5.prototype.LEFT;
   var BOTTOM = p5.prototype.BOTTOM;
 
-  
+  /**
+  * The sprite's position of the sprite as a vector (x,y).
+  * @property position
+  * @type {p5.Vector}
+  */
   this.position = createVector(_x, _y);
 
- 
+  /**
+  * The sprite's position at the beginning of the last update as a vector (x,y).
+  * @property previousPosition
+  * @type {p5.Vector}
+  */
   this.previousPosition = createVector(_x, _y);
 
-  
+  /*
+  The sprite's position at the end of the last update as a vector (x,y).
+  Note: this will differ from position whenever the position is changed
+  directly by assignment.
+  */
   this.newPosition = createVector(_x, _y);
 
   //Position displacement on the x coordinate since the last update
   this.deltaX = 0;
   this.deltaY = 0;
 
-  
+  /**
+  * The sprite's velocity as a vector (x,y)
+  * Velocity is speed broken down to its vertical and horizontal components.
+  *
+  * @property velocity
+  * @type {p5.Vector}
+  */
   this.velocity = createVector(0, 0);
 
-  
+  /**
+  * Set a limit to the sprite's scalar speed regardless of the direction.
+  * The value can only be positive. If set to -1, there's no limit.
+  *
+  * @property maxSpeed
+  * @type {Number}
+  * @default -1
+  */
   this.maxSpeed = -1;
 
-  
+  /**
+  * Friction factor, reduces the sprite's velocity.
+  * The friction should be close to 0 (eg. 0.01)
+  * 0: no friction
+  * 1: full friction
+  *
+  * @property friction
+  * @type {Number}
+  * @default 0
+  */
+  this.friction = 0;
+
+  /**
+  * The sprite's current collider.
+  * It can either be an Axis Aligned Bounding Box (a non-rotated rectangle)
+  * or a circular collider.
+  * If the sprite is checked for collision, bounce, overlapping or mouse events the
+  * collider is automatically created from the width and height
+  * of the sprite or from the image dimension in case of animate sprites
+  *
+  * You can set a custom collider with Sprite.setCollider
+  *
+  * @property collider
+  * @type {Object}
+  */
   this.collider = undefined;
 
- 
+  //internal use
+  //"default" - no image or custom collider is specified, use the shape width / height
+  //"custom" - specified with setCollider
+  //"image" - no collider is set with setCollider and an image is added
   this.colliderType = 'none';
 
-  
+  /**
+  * Object containing information about the most recent collision/overlapping
+  * To be typically used in combination with Sprite.overlap or Sprite.collide
+  * functions.
+  * The properties are touching.left, touching.right, touching.top,
+  * touching.bottom and are either true or false depending on the side of the
+  * collider.
+  *
+  * @property touching
+  * @type {Object}
+  */
   this.touching = {};
   this.touching.left = false;
   this.touching.right = false;
   this.touching.top = false;
   this.touching.bottom = false;
 
-  
+  /**
+  * The mass determines the velocity transfer when sprites bounce
+  * against each other. See Sprite.bounce
+  * The higher the mass the least the sprite will be affected by collisions.
+  *
+  * @property mass
+  * @type {Number}
+  * @default 1
+  */
   this.mass = 1;
 
-  
+  /**
+  * If set to true the sprite won't bounce or be displaced by collisions
+  * Simulates an infinite mass or an anchored object.
+  *
+  * @property immovable
+  * @type {Boolean}
+  * @default false
+  */
   this.immovable = false;
 
-  
+  //Coefficient of restitution - velocity lost in the bouncing
+  //0 perfectly inelastic , 1 elastic, > 1 hyper elastic
+
+  /**
+  * Coefficient of restitution. The velocity lost after bouncing.
+  * 1: perfectly elastic, no energy is lost
+  * 0: perfectly inelastic, no bouncing
+  * less than 1: inelastic, this is the most common in nature
+  * greater than 1: hyper elastic, energy is increased like in a pinball bumper
+  *
+  * @property restitution
+  * @type {Number}
+  * @default 1
+  */
   this.restitution = 1;
 
-  
+  /**
+  * Rotation in degrees of the visual element (image or animation)
+  * Note: this is not the movement's direction, see getDirection.
+  *
+  * @property rotation
+  * @type {Number}
+  * @default 0
+  */
   Object.defineProperty(this, 'rotation', {
     enumerable: true,
     get: function() {
@@ -538,45 +922,159 @@ function Sprite(pInst, _x, _y, _w, _h) {
     }
   });
 
-  
+  /**
+  * Internal rotation variable (expressed in degrees).
+  * Note: external callers access this through the rotation property above.
+  *
+  * @private
+  * @property _rotation
+  * @type {Number}
+  * @default 0
+  */
   this._rotation = 0;
 
-  
+  /**
+  * Rotation change in degrees per frame of thevisual element (image or animation)
+  * Note: this is not the movement's direction, see getDirection.
+  *
+  * @property rotationSpeed
+  * @type {Number}
+  * @default 0
+  */
   this.rotationSpeed = 0;
 
 
-  
+  /**
+  * Automatically lock the rotation property of the visual element
+  * (image or animation) to the sprite's movement direction and vice versa.
+  *
+  * @property rotateToDirection
+  * @type {Boolean}
+  * @default false
+  */
   this.rotateToDirection = false;
 
 
+  /**
+  * Determines the rendering order within a group: a sprite with
+  * lower depth will appear below the ones with higher depth.
+  *
+  * Note: drawing a group before another with drawSprites will make
+  * its members appear below the second one, like in normal p5 canvas
+  * drawing.
+  *
+  * @property depth
+  * @type {Number}
+  * @default One more than the greatest existing sprite depth, when calling
+  *          createSprite().  When calling new Sprite() directly, depth will
+  *          initialize to 0 (not recommended).
+  */
   this.depth = 0;
 
-  
+  /**
+  * Determines the sprite's scale.
+  * Example: 2 will be twice the native size of the visuals,
+  * 0.5 will be half. Scaling up may make images blurry.
+  *
+  * @property scale
+  * @type {Number}
+  * @default 1
+  */
   this.scale = 1;
 
   var dirX = 1;
   var dirY = 1;
 
-  
+  /**
+  * The sprite's visibility.
+  *
+  * @property visible
+  * @type {Boolean}
+  * @default true
+  */
   this.visible = true;
 
-  
+  /**
+  * If set to true sprite will track its mouse state.
+  * the properties mouseIsPressed and mouseIsOver will be updated.
+  * Note: automatically set to true if the functions
+  * onMouseReleased or onMousePressed are set.
+  *
+  * @property mouseActive
+  * @type {Boolean}
+  * @default false
+  */
   this.mouseActive = false;
 
-  
+  /**
+  * True if mouse is on the sprite's collider.
+  * Read only.
+  *
+  * @property mouseIsOver
+  * @type {Boolean}
+  */
   this.mouseIsOver = false;
 
-  
+  /**
+  * True if mouse is pressed on the sprite's collider.
+  * Read only.
+  *
+  * @property mouseIsPressed
+  * @type {Boolean}
+  */
   this.mouseIsPressed = false;
 
-  
-  
+  /*
+  * Width of the sprite's current image.
+  * If no images or animations are set it's the width of the
+  * placeholder rectangle.
+  * Used internally to make calculations and draw the sprite.
+  *
+  * @private
+  * @property _internalWidth
+  * @type {Number}
+  * @default 100
+  */
   this._internalWidth = _w;
 
-  
+  /*
+  * Height of the sprite's current image.
+  * If no images or animations are set it's the height of the
+  * placeholder rectangle.
+  * Used internally to make calculations and draw the sprite.
+  *
+  * @private
+  * @property _internalHeight
+  * @type {Number}
+  * @default 100
+  */
   this._internalHeight = _h;
 
-  
+  /*
+   * _internalWidth and _internalHeight are used for all p5.play
+   * calculations, but width and height can be extended. For example,
+   * you may want users to always get and set a scaled width:
+      Object.defineProperty(this, 'width', {
+        enumerable: true,
+        configurable: true,
+        get: function() {
+          return this._internalWidth * this.scale;
+        },
+        set: function(value) {
+          this._internalWidth = value / this.scale;
+        }
+      });
+   */
+
+  /**
+  * Width of the sprite's current image.
+  * If no images or animations are set it's the width of the
+  * placeholder rectangle.
+  *
+  * @property width
+  * @type {Number}
+  * @default 100
+  */
   Object.defineProperty(this, 'width', {
     enumerable: true,
     configurable: true,
@@ -593,7 +1091,15 @@ function Sprite(pInst, _x, _y, _w, _h) {
   else
     this.width = _w;
 
-  
+  /**
+  * Height of the sprite's current image.
+  * If no images or animations are set it's the height of the
+  * placeholder rectangle.
+  *
+  * @property height
+  * @type {Number}
+  * @default 100
+  */
   Object.defineProperty(this, 'height', {
     enumerable: true,
     configurable: true,
@@ -610,25 +1116,72 @@ function Sprite(pInst, _x, _y, _w, _h) {
   else
     this.height = _h;
 
-  
+  /**
+  * Unscaled width of the sprite
+  * If no images or animations are set it's the width of the
+  * placeholder rectangle.
+  *
+  * @property originalWidth
+  * @type {Number}
+  * @default 100
+  */
   this.originalWidth = this._internalWidth;
 
-  
+  /**
+  * Unscaled height of the sprite
+  * If no images or animations are set it's the height of the
+  * placeholder rectangle.
+  *
+  * @property originalHeight
+  * @type {Number}
+  * @default 100
+  */
   this.originalHeight = this._internalHeight;
 
-  
+  /**
+  * True if the sprite has been removed.
+  *
+  * @property removed
+  * @type {Boolean}
+  */
   this.removed = false;
 
-  
+  /**
+  * Cycles before self removal.
+  * Set it to initiate a countdown, every draw cycle the property is
+  * reduced by 1 unit. At 0 it will call a sprite.remove()
+  * Disabled if set to -1.
+  *
+  * @property life
+  * @type {Number}
+  * @default -1
+  */
   this.life = -1;
 
-  
+  /**
+  * If set to true, draws an outline of the collider, the depth, and center.
+  *
+  * @property debug
+  * @type {Boolean}
+  * @default false
+  */
   this.debug = false;
 
-  
+  /**
+  * If no image or animations are set this is color of the
+  * placeholder rectangle
+  *
+  * @property shapeColor
+  * @type {color}
+  */
   this.shapeColor = color(random(255), random(255), random(255));
 
-  
+  /**
+  * Groups the sprite belongs to, including allSprites
+  *
+  * @property groups
+  * @type {Array}
+  */
   this.groups = [];
 
   var animations = {};
@@ -636,15 +1189,35 @@ function Sprite(pInst, _x, _y, _w, _h) {
   //The current animation's label.
   var currentAnimation = '';
 
-  
+  /**
+  * Reference to the current animation.
+  *
+  * @property animation
+  * @type {Animation}
+  */
   this.animation = undefined;
 
-  
+  /**
+  * Internal variable to keep track of whether this sprite is drawn while
+  * the camera is active.
+  * Used in Sprite.update() to know whether to use camera mouse coordinates.
+  * @see https://github.com/molleindustria/p5.play/issues/107
+  *
+  * @private
+  * @property _drawnWithCamera
+  * @type {Boolean}
+  * @default false
+  */
   this._drawnWithCamera = false;
 
-  
+  /*
+   * @private
+   * Keep animation properties in sync with how the animation changes.
+   */
   this._syncAnimationSizes = function() {
-    
+    //has an animation but the collider is still default
+    //the animation wasn't loaded. if the animation is not a 1x1 image
+    //it means it just finished loading
     if(this.colliderType === 'default' &&
       animations[currentAnimation].getWidth() !== 1 && animations[currentAnimation].getHeight() !== 1)
     {
@@ -664,7 +1237,12 @@ function Sprite(pInst, _x, _y, _w, _h) {
     }
   };
 
-  
+  /**
+  * Updates the sprite.
+  * Called automatically at the beginning of the draw cycle.
+  *
+  * @method update
+  */
   this.update = function() {
 
     if(!this.removed)
@@ -710,7 +1288,8 @@ function Sprite(pInst, _x, _y, _w, _h) {
         }
       }
 
-      
+      //a collider is created either manually with setCollider or
+      //when I check this sprite for collisions or overlaps
       if(this.collider)
       {
         if(this.collider instanceof AABB)
@@ -793,7 +1372,12 @@ function Sprite(pInst, _x, _y, _w, _h) {
     }
   };//end update
 
-  
+  /**
+   * Creates a default collider matching the size of the
+   * placeholder rectangle or the bounding box of the image.
+   *
+   * @method setDefaultCollider
+   */
   this.setDefaultCollider = function() {
 
     //if has animation get the animation bounding box
@@ -822,7 +1406,12 @@ function Sprite(pInst, _x, _y, _w, _h) {
     pInst.quadTree.insert(this);
   };
 
-  
+  /**
+   * Updates the sprite mouse states and triggers the mouse events:
+   * onMouseOver, onMouseOut, onMousePressed, onMouseReleased
+   *
+   * @method mouseUpdate
+   */
   this.mouseUpdate = function() {
 
     var mouseWasOver = this.mouseIsOver;
@@ -890,7 +1479,38 @@ function Sprite(pInst, _x, _y, _w, _h) {
 
   };
 
-  
+  /**
+  * Sets a collider for the sprite.
+  *
+  * In p5.play a Collider is an invisible circle or rectangle
+  * that can have any size or position relative to the sprite and which
+  * will be used to detect collisions and overlapping with other sprites,
+  * or the mouse cursor.
+  *
+  * If the sprite is checked for collision, bounce, overlapping or mouse events
+  * a collider is automatically created from the width and height parameter
+  * passed at the creation of the sprite or the from the image dimension in case
+  * of animated sprites.
+  *
+  * Often the image bounding box is not appropriate as the active area for
+  * collision detection so you can set a circular or rectangular sprite with
+  * different dimensions and offset from the sprite's center.
+  *
+  * There are four ways to call this method:
+  *
+  * 1. setCollider("rectangle")
+  * 2. setCollider("rectangle", offsetX, offsetY, width, height)
+  * 3. setCollider("circle")
+  * 4. setCollider("circle", offsetX, offsetY, radius)
+  *
+  * @method setCollider
+  * @param {String} type Either "rectangle" or "circle"
+  * @param {Number} offsetX Collider x position from the center of the sprite
+  * @param {Number} offsetY Collider y position from the center of the sprite
+  * @param {Number} width Collider width or radius
+  * @param {Number} height Collider height
+  * @throws {TypeError} if given invalid parameters.
+  */
   this.setCollider = function(type, offsetX, offsetY, width, height) {
     if (!(type === 'rectangle' || type === 'circle')) {
       throw new TypeError('setCollider expects the first argument to be either "circle" or "rectangle"');
@@ -920,7 +1540,10 @@ function Sprite(pInst, _x, _y, _w, _h) {
     quadTree.insert(this);
   };
 
-
+  /**
+   * Returns a the bounding box of the current image
+   * @method getBoundingBox
+   */
   this.getBoundingBox = function() {
 
     var w = animations[currentAnimation].getWidth()*abs(this._getScaleX());
@@ -937,7 +1560,16 @@ function Sprite(pInst, _x, _y, _w, _h) {
     }
   };
 
- 
+  /**
+  * Sets the sprite's horizontal mirroring.
+  * If 1 the images displayed normally
+  * If -1 the images are flipped horizontally
+  * If no argument returns the current x mirroring
+  *
+  * @method mirrorX
+  * @param {Number} dir Either 1 or -1
+  * @return {Number} Current mirroring if no parameter is specified
+  */
   this.mirrorX = function(dir) {
     if(dir === 1 || dir === -1)
       dirX = dir;
@@ -945,7 +1577,16 @@ function Sprite(pInst, _x, _y, _w, _h) {
       return dirX;
   };
 
-  
+  /**
+  * Sets the sprite's vertical mirroring.
+  * If 1 the images displayed normally
+  * If -1 the images are flipped vertically
+  * If no argument returns the current y mirroring
+  *
+  * @method mirrorY
+  * @param {Number} dir Either 1 or -1
+  * @return {Number} Current mirroring if no parameter is specified
+  */
   this.mirrorY = function(dir) {
     if(dir === 1 || dir === -1)
       dirY = dir;
@@ -953,19 +1594,33 @@ function Sprite(pInst, _x, _y, _w, _h) {
       return dirY;
   };
 
-  
+  /*
+   * Returns the value the sprite should be scaled in the X direction.
+   * Used to calculate rendering and collisions.
+   * @private
+   */
   this._getScaleX = function()
   {
     return this.scale;
   };
 
-  
+  /*
+   * Returns the value the sprite should be scaled in the Y direction.
+   * Used to calculate rendering and collisions.
+   * @private
+   */
   this._getScaleY = function()
   {
     return this.scale;
   };
 
-  
+  /**
+   * Manages the positioning, scale and rotation of the sprite
+   * Called automatically, it should not be overridden
+   * @private
+   * @final
+   * @method display
+   */
   this.display = function()
   {
     if (this.visible && !this.removed)
@@ -1023,7 +1678,16 @@ function Sprite(pInst, _x, _y, _w, _h) {
   };
 
 
-  
+  /**
+  * Manages the visuals of the sprite.
+  * It can be overridden with a custom drawing function.
+  * The 0,0 point will be the center of the sprite.
+  * Example:
+  * sprite.draw = function() { ellipse(0,0,10,10) }
+  * Will display the sprite as circle.
+  *
+  * @method draw
+  */
   this.draw = function()
   {
     if(currentAnimation !== '' && animations)
@@ -1039,7 +1703,12 @@ function Sprite(pInst, _x, _y, _w, _h) {
     }
   };
 
-  
+  /**
+   * Removes the Sprite from the sketch.
+   * The removed Sprite won't be drawn or updated anymore.
+   *
+   * @method remove
+   */
   this.remove = function() {
     this.removed = true;
 
@@ -1051,18 +1720,34 @@ function Sprite(pInst, _x, _y, _w, _h) {
     }
   };
 
-  
+  /**
+  * Sets the velocity vector.
+  *
+  * @method setVelocity
+  * @param {Number} x X component
+  * @param {Number} y Y component
+  */
   this.setVelocity = function(x, y) {
     this.velocity.x = x;
     this.velocity.y = y;
   };
 
- 
+  /**
+  * Calculates the scalar speed.
+  *
+  * @method getSpeed
+  * @return {Number} Scalar speed
+  */
   this.getSpeed = function() {
     return this.velocity.mag();
   };
 
-  
+  /**
+  * Calculates the movement's direction in degrees.
+  *
+  * @method getDirection
+  * @return {Number} Angle in degrees
+  */
   this.getDirection = function() {
 
     var direction = atan2(this.velocity.y, this.velocity.x);
@@ -1070,6 +1755,10 @@ function Sprite(pInst, _x, _y, _w, _h) {
     if(isNaN(direction))
       direction = 0;
 
+    // Unlike Math.atan2, the atan2 method above will return degrees if
+    // the current p5 angleMode is DEGREES, and radians if the p5 angleMode is
+    // RADIANS.  This method should always return degrees (for now).
+    // See https://github.com/molleindustria/p5.play/issues/94
     if (pInst._angleMode === pInst.RADIANS) {
       direction = degrees(direction);
     }
@@ -1077,7 +1766,12 @@ function Sprite(pInst, _x, _y, _w, _h) {
     return direction;
   };
 
-  
+  /**
+  * Adds the sprite to an existing group
+  *
+  * @method addToGroup
+  * @param {Object} group
+  */
   this.addToGroup = function(group) {
     if(group instanceof Array)
       group.add(this);
@@ -1085,7 +1779,12 @@ function Sprite(pInst, _x, _y, _w, _h) {
       print('addToGroup error: '+group+' is not a group');
   };
 
-  
+  /**
+  * Limits the scalar speed.
+  *
+  * @method limitSpeed
+  * @param {Number} max Max speed: positive number
+  */
   this.limitSpeed = function(max) {
 
     //update linear speed
@@ -1100,7 +1799,17 @@ function Sprite(pInst, _x, _y, _w, _h) {
     }
   };
 
-  
+  /**
+  * Set the speed and direction of the sprite.
+  * The action overwrites the current velocity.
+  * If direction is not supplied, the current direction is maintained.
+  * If direction is not supplied and there is no current velocity, the current
+  * rotation angle used for the direction.
+  *
+  * @method setSpeed
+  * @param {Number}  speed Scalar speed
+  * @param {Number}  [angle] Direction in degrees
+  */
   this.setSpeed = function(speed, angle) {
     var a;
     if (typeof angle === 'undefined') {
@@ -1124,7 +1833,14 @@ function Sprite(pInst, _x, _y, _w, _h) {
     this.velocity.y = sin(a)*speed;
   };
 
-  
+  /**
+  * Pushes the sprite in a direction defined by an angle.
+  * The force is added to the current velocity.
+  *
+  * @method addSpeed
+  * @param {Number}  speed Scalar speed to add
+  * @param {Number}  angle Direction in degrees
+  */
   this.addSpeed = function(speed, angle) {
     var a;
     if (pInst._angleMode === pInst.RADIANS) {
@@ -1136,7 +1852,15 @@ function Sprite(pInst, _x, _y, _w, _h) {
     this.velocity.y += sin(a) * speed;
   };
 
-  
+  /**
+  * Pushes the sprite toward a point.
+  * The force is added to the current velocity.
+  *
+  * @method attractionPoint
+  * @param {Number}  magnitude Scalar speed to add
+  * @param {Number}  pointX Direction x coordinate
+  * @param {Number}  pointY Direction y coordinate
+  */
   this.attractionPoint = function(magnitude, pointX, pointY) {
     var angle = atan2(pointY-this.position.y, pointX-this.position.x);
     this.velocity.x += cos(angle) * magnitude;
