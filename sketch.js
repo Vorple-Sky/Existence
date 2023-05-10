@@ -43,7 +43,7 @@ function setup() {
   playerAvatar.setMaxSpeed(10);
 
    
-  playerAvatar.addMovingAnimation( 'assets/BrainWalkingleft01.png', 'assets/BrainWalkingleft02.png');
+  playerAvatar.addMovingAnimation('assets/BrainWalkingleft01.png', 'assets/BrainWalkingleft02.png');
   playerAvatar.addStandingAnimation('assets/BrainStandingright01_.png');
 
   
